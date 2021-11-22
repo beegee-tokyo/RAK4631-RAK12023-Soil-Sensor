@@ -42,7 +42,7 @@ void setup_app(void)
 		if ((millis() - serial_timeout) < 5000)
 		{
 			delay(100);
-			digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+			digitalWrite(LED_GREEN, !digitalRead(LED_GREEN));
 		}
 		else
 		{
@@ -77,7 +77,7 @@ bool init_app(void)
 void app_event_handler(void)
 {
 	// To lower power consumption, switch off the LED immediately
-	digitalWrite(LED_BUILTIN, LOW);
+	digitalWrite(LED_GREEN, LOW);
 	// Timer triggered event
 	if ((g_task_event_type & STATUS) == STATUS)
 	{
@@ -97,6 +97,10 @@ void app_event_handler(void)
 
 		// Get soil sensor values
 		read_soil();
+
+		// Just in case
+		digitalWrite(LED_GREEN, LOW);
+		digitalWrite(WB_IO2, LOW);
 
 		// Get battery level
 		float temp_batt = read_batt() / 10;
@@ -162,7 +166,7 @@ void app_event_handler(void)
 void ble_data_handler(void)
 {
 	// To lower power consumption, switch off the LED immediately
-	digitalWrite(LED_BUILTIN, LOW);
+	digitalWrite(LED_GREEN, LOW);
 	if (g_enable_ble)
 	{
 		// BLE UART data handling
@@ -189,7 +193,7 @@ void ble_data_handler(void)
 void lora_data_handler(void)
 {
 	// To lower power consumption, switch off the LED immediately
-	digitalWrite(LED_BUILTIN, LOW);
+	digitalWrite(LED_GREEN, LOW);
 
 	// LoRa Join finished handling
 	if ((g_task_event_type & LORA_JOIN_FIN) == LORA_JOIN_FIN)

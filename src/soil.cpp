@@ -81,6 +81,10 @@ void read_soil(void)
 	if (!sensor.sensor_on())
 	{
 		MYLOG("SOIL", "Can't wake up sensor");
+		if (g_ble_uart_is_connected)
+		{
+			g_ble_uart.println("Can't wake up sensor");
+		}
 		g_soil_data.temp_1 = 0xFF;
 		g_soil_data.temp_2 = 0xFF;
 
@@ -90,6 +94,7 @@ void read_soil(void)
 
 		Wire.end();
 
+		NVIC_SystemReset();
 		return;
 	}
 
