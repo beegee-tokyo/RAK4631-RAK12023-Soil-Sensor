@@ -12,7 +12,7 @@ This example is for a soil moisture sensor based on the [WisBlock RAK4631 Core m
 - [RAK12023/RAK12035 soil moisture sensor](https://docs.rakwireless.com/Product-Categories/WisBlock/#wisblock-sensor) :arrow_heading_up:
 
 ## Power consumption
-The application sleeps around between each measurement and puts the soil moisture sensor into sleep as well. But even this solution switches off the power of the sensor, the sleep current is still ~900uA. Still looking into a better solution.
+The application sleeps around between each measurement and puts the soil moisture sensor into sleep as well. But even this solution switches off the power of the sensor, the sleep current is still ~190uA. Still looking into a better solution.
 
 ----
 
