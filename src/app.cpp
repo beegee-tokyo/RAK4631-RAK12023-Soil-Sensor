@@ -84,23 +84,14 @@ void app_event_handler(void)
 		g_task_event_type &= N_STATUS;
 		MYLOG("APP", "Timer wakeup");
 
-		// // If BLE is enabled, restart Advertising
-		// if (g_enable_ble)
-		// {
-		// 	restart_advertising(15);
-		// }
-
-		// Power up the sensor
-		digitalWrite(WB_IO2, HIGH);
-		// Give sensor time to wakeup
-		delay(1000);
+		// If BLE is enabled, restart Advertising
+		if (g_enable_ble)
+		{
+			restart_advertising(15);
+		}
 
 		// Get soil sensor values
 		read_soil();
-
-		// Just in case
-		digitalWrite(LED_GREEN, LOW);
-		digitalWrite(WB_IO2, LOW);
 
 		// Get battery level
 		float temp_batt = read_batt() / 10;
@@ -131,7 +122,7 @@ void app_event_handler(void)
 		Serial.printf("%02X\n", g_soil_data.valid);
 #endif
 
-		lmh_error_status result = send_lorawan_packet((uint8_t *)&g_soil_data, SOIL_DATA_LEN);
+		lmh_error_status result = send_lora_packet((uint8_t *)&g_soil_data, SOIL_DATA_LEN);
 		switch (result)
 		{
 		case LMH_SUCCESS:
@@ -216,8 +207,10 @@ void lora_data_handler(void)
 	{
 		/**************************************************************/
 		/**************************************************************/
-		/// \todo LoRa data arrived
-		/// \todo parse them here
+		/// LoRa data arrived
+		/// 0x01 0x66 0xnn uplink is used to switch on / off the ble
+		/// nn = 0 => switch off BLE after 5 seconds
+		/// nn = 1 => switch on BLE permanently
 		/**************************************************************/
 		/**************************************************************/
 		g_task_event_type &= N_LORA_DATA;

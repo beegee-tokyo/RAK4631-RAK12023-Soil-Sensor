@@ -75,9 +75,13 @@ struct soil_data_s
 	uint8_t data_flag6 = 0x04; // 12
 	uint8_t data_flag7 = 0x66; // 13
 	uint8_t valid = 0;		   // 14
+	uint8_t data_flag8 = 0x05; // 15
+	uint8_t data_flag9 = 0x02; // 16
+	uint8_t cap_1 = 0;		   // 17
+	uint8_t cap_2 = 0;		   // 18
 };
 extern soil_data_s g_soil_data;
-#define SOIL_DATA_LEN 14 // sizeof(g_soil_data)
+#define SOIL_DATA_LEN 18 // sizeof(g_soil_data)
 
 /** Battery level uinion */
 union batt_s

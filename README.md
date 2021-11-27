@@ -41,8 +41,18 @@ AT+NJM=1
 AT+DEVEUI=1000000000000001
 AT+APPEUI=AB00AB00AB00AB00
 AT+APPKEY=AB00AB00AB00AB00AB00AB00AB00AB00
-AT+SENDFREQ=10800
+AT+SENDFREQ=3600
 ```
+
+| Command | Explanation |
+| --- | --- |
+| **AT+NWM=1**  |  set the node into LoRaWAN mode |
+| **AT+NJM=1**  |  set network join method to OTAA |
+| **AT+DEVEUI=1000000000000001**  |  set the device EUI, best to use the DevEUI that is printed on the label of your WisBlock Core module |
+| **AT+APPEUI=AB00AB00AB00AB00**  |  set the application EUI, required on the LoRaWAN server  |
+| **AT+APPKEY=AB00AB00AB00AB00AB00AB00AB00AB00**  |  set the application Key, used to encrypt the data packet during network join |
+| **AT+SENDFREQ=3600**  |  set the frequency the sensor node will send data packets. 3600 == 60 x 60 seconds == 1 hour |
+
 ## _REMARK_
 The manual for all AT commands can be found here: [AT-Commands.md](https://github.com/beegee-tokyo/WisBlock-API/blob/main/AT-Commands.md) :arrow_heading_up:    
 
@@ -50,13 +60,22 @@ The manual for all AT commands can be found here: [AT-Commands.md](https://githu
 
 #### B Calibrate the sensor
 As each sensor has a different sensitivity, the sensor needs to be calibrated. Calibration can be done over the AT command interface. The calibration requires two steps, first measure with the sensor in dry air, second measure with the sensor submerged in water (only the tip up to the white line on the sensor).    
-The calibration needs to be done only once. The calibration values are stored in the flash memory of the RAK4631.    
+The calibration needs to be done only once. The calibration values are stored in the RAK12035 sensor. That means if you calibrate the sensor on one RAK4631, you do not need to do it again if you change the RAK4631. The firmware will read the calibration data from the sensor.    
 1) Dry calibration.    
 Have the sensor in dry air.    
-Submit AT command **`AT+DRY`** to start the calibration. After the calibration is done, the value is saved in Flash and the result will be printed in the terminal screen.
+Submit AT command **`AT+DRY`** to start the calibration. After the calibration is done, the value is saved in the sensor and the result will be printed in the terminal screen.
 2) Wet calibration.    
 Have the sensor submerged in water (only the tip up to the white line on the sensor).    
-Submit AT command **`AT+WET`** to start the calibration. After the calibration is done, the value is saved in Flash and the result will be printed in the terminal screen.
+Submit AT command **`AT+WET`** to start the calibration. After the calibration is done, the value is saved in the sensor and the result will be printed in the terminal screen.
+
+Above calibration is a very basic one, if you need better accuracy you need to calibrate the sensor in the soil itself. Which is not a simple thing, as the moisture measurement will be affected by the density of the soil, the amount of fertilizer in the soil, temperature and other factors.     
+For a calibration in soil, you need to prepare two pots with the same soil (best taken from the field/garden where the sensors will be used later). 
+1) Dry calibration:
+Let one pot dry up complete, make sure the soil is not clumped together and the complete soil in the pot is dried up. Put the sensor complete into the dry soil, make sure it is complete under the surface, only the wire sticking out.    
+Submit AT command **`AT+DRY`** to start the calibration. After the calibration is done, the value is saved in the sensor and the result will be printed in the terminal screen.    
+2) Wet calibration:
+Poor water into the second pot. Make sure the soil is saturated with water, mix it up well, make sure the soil has everywhere the same level of water saturation. Put the sensor complete into the wet soil, make sure it is complete under the surface, only the wire sticking out.    
+Submit AT command **`AT+WET`** to start the calibration. After the calibration is done, the value is saved in the sensor and the result will be printed in the terminal screen.
 
 #### C Setup your LPWAN server application.    
 Please check tutorials how to setup an LPWAN server application.     
@@ -104,6 +123,16 @@ AT+APPKEY=AB00AB00AB00AB00AB00AB00AB00AB00
 AT+SENDFREQ=3600
 AT+JOIN=1,1,10,10
 ```
+
+| Command | Explanation |
+| --- | --- |
+| **AT+NWM=1**  |  set the node into LoRaWAN mode |
+| **AT+NJM=1**  |  set network join method to OTAA |
+| **AT+DEVEUI=1000000000000001**  |  set the device EUI, best to use the DevEUI that is printed on the label of your WisBlock Core module |
+| **AT+APPEUI=AB00AB00AB00AB00**  |  set the application EUI, required on the LoRaWAN server  |
+| **AT+APPKEY=AB00AB00AB00AB00AB00AB00AB00AB00**  |  set the application Key, used to encrypt the data packet during network join |
+| **AT+SENDFREQ=3600**  |  set the frequency the sensor node will send data packets. 3600 == 60 x 60 seconds == 1 hour |
+| **AT+JOIN=1,1,10,10**  |  start to join the network, enables as well auto join after a power up or a device reset |
 
 ----
 

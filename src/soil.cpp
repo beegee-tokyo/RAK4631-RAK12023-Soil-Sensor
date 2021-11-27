@@ -17,8 +17,8 @@ soil_data_s g_soil_data;
 
 struct calib_values_s
 {
-	uint16_t zero_val = 75;
-	uint16_t hundred_val = 250;
+	uint16_t dry_cal = 75;
+	uint16_t wet_cal = 250;
 };
 
 calib_values_s calib_values;
@@ -30,6 +30,8 @@ using namespace Adafruit_LittleFS_Namespace;
 static const char soil_name[] = "SOIL";
 
 File soil_file(InternalFS);
+
+uint8_t read_fail_counter = 0;
 
 bool init_soil(void)
 {
@@ -45,6 +47,7 @@ bool init_soil(void)
 	sensor.begin();
 
 	uint8_t data = 0;
+	uint16_t value = 0;
 
 	// Check the sensor version
 	if (!sensor.get_sensor_version(&data))
@@ -57,10 +60,64 @@ bool init_soil(void)
 		found_sensor = true;
 	}
 
-	read_calib();
+	// Check the sensor calibration values
+	if (!sensor.get_dry_cal(&value))
+	{
+		MYLOG("SOIL", "No Dry calibration");
+	}
+	else
+	{
+		MYLOG("SOIL", "Sensor Dry Cal %d", value);
+		found_sensor = true;
+	}
 
-	sensor.set_zero_val(calib_values.zero_val);
-	sensor.set_hundred_val(calib_values.hundred_val);
+	// Check the sensor calibration values
+	if (!sensor.get_wet_cal(&value))
+	{
+		MYLOG("SOIL", "No Wet calibration");
+	}
+	else
+	{
+		MYLOG("SOIL", "Sensor Wet Cal %d", value);
+		found_sensor = true;
+	}
+
+	// #define CAL_TEST
+
+#ifdef CAL_TEST
+	for (int i = 0; i < 100; i++)
+	{
+		MYLOG("SOIL", "Read cycle %d", i);
+		// Check the sensor calibration values
+		uint16_t value = 0;
+		if (!sensor.get_dry_cal(&value))
+		{
+			MYLOG("SOIL", "No Dry calibration");
+		}
+		else
+		{
+			MYLOG("SOIL", "Sensor Dry Cal %d", value);
+		}
+
+		// Check the sensor calibration values
+		if (!sensor.get_wet_cal(&value))
+		{
+			MYLOG("SOIL", "No Wet calibration");
+		}
+		else
+		{
+			MYLOG("SOIL", "Sensor Wet Cal %d", value);
+		}
+
+		MYLOG("SOIL", "Powercycle Sensor");
+		sensor.sensor_sleep();
+		digitalWrite(WB_IO2, LOW);
+		delay(500);
+		digitalWrite(WB_IO2, HIGH);
+		delay(500);
+		sensor.reset();
+	}
+#endif
 
 	sensor.sensor_sleep();
 
@@ -75,6 +132,8 @@ void read_soil(void)
 	uint8_t sensHumid = 0;
 	uint32_t avgTemp = 0;
 	uint32_t avgHumid = 0;
+	uint16_t sensCap = 0;
+	uint32_t avgCap = 0;
 
 	// Wake up the sensor
 	Wire.begin();
@@ -94,7 +153,14 @@ void read_soil(void)
 
 		Wire.end();
 
-		NVIC_SystemReset();
+		read_fail_counter++;
+
+		if (read_fail_counter == 5)
+		{
+			read_fail_counter = 0;
+			delay(1000);
+			NVIC_SystemReset();
+		}
 		return;
 	}
 
@@ -108,8 +174,12 @@ void read_soil(void)
 			retry = 4;
 			avgTemp = sensTemp;
 			avgHumid = sensHumid;
+			sensor.get_sensor_capacitance(&sensCap);
+
+			delay(250);
 			for (int avg = 0; avg < 50; avg++)
 			{
+				delay(250);
 				if (sensor.get_sensor_temperature(&sensTemp))
 				{
 					avgTemp += sensTemp;
@@ -118,32 +188,37 @@ void read_soil(void)
 
 				if (sensor.get_sensor_moisture(&sensHumid))
 				{
-					if (sensHumid != NAN)
-					{
-						avgHumid += sensHumid;
-						avgHumid /= 2;
-					}
+					avgHumid += sensHumid;
+					avgHumid /= 2;
+				}
+
+				if (sensor.get_sensor_capacitance(&sensCap))
+				{
+					avgCap += sensCap;
+					avgCap /= 2;
 				}
 			}
 		}
 	}
 
 	MYLOG("SOIL", "Sensor reading was %s", got_value ? "success" : "unsuccessful");
-	MYLOG("SOIL", "T %.2f H %ld", (double)(avgTemp / 10.0), avgHumid);
+	MYLOG("SOIL", "T %.2f H %ld C %ld", (double)(avgTemp / 10.0), avgHumid, avgCap);
 
 	if (g_ble_uart_is_connected)
 	{
 		g_ble_uart.printf("Sensor reading was %s\n", got_value ? "success" : "unsuccessful");
-		g_ble_uart.printf("T %.2f H %ld\n", (double)(avgTemp / 10.0), avgHumid);
+		g_ble_uart.printf("T %.2f H %ld C %ld\n", (double)(avgTemp / 10.0), avgHumid, avgCap);
 	}
 
-	// avgTemp = avgTemp * 10.0;
 	avgHumid = avgHumid * 2.0;
 
 	g_soil_data.temp_1 = (uint8_t)(avgTemp >> 8);
 	g_soil_data.temp_2 = (uint8_t)(avgTemp);
 
 	g_soil_data.humid_1 = (uint8_t)(avgHumid);
+
+	g_soil_data.cap_1 = (uint8_t)(avgCap >> 8);
+	g_soil_data.cap_2 = (uint8_t)(avgCap);
 
 	if (got_value)
 	{
@@ -161,7 +236,7 @@ void read_soil(void)
 uint16_t start_calib(bool is_dry)
 {
 	MYLOG("SOIL", "Starting calibration for %s", is_dry ? "dry" : "wet");
-	Serial.flush();
+
 	uint16_t new_reading = 0;
 	uint16_t new_value = 0;
 	digitalWrite(LED_GREEN, LOW);
@@ -177,13 +252,24 @@ uint16_t start_calib(bool is_dry)
 		MYLOG("SOIL", "Can't wake up sensor");
 		Wire.end();
 
+		if (g_lorawan_settings.send_repeat_time != 0)
+		{
+			// Calibration finished, restart the timer that will wakeup the loop frequently
+			g_task_wakeup_timer.stop();
+			g_task_wakeup_timer.setPeriod(g_lorawan_settings.send_repeat_time);
+			g_task_wakeup_timer.start();
+		}
+
+		digitalWrite(LED_BLUE, LOW);
+		digitalWrite(LED_GREEN, LOW);
+
 		if (is_dry)
 		{
-			return calib_values.zero_val;
+			return 0xFFFF;
 		}
 		else
 		{
-			return calib_values.hundred_val;
+			return 0xFFFF;
 		}
 	}
 
@@ -199,41 +285,23 @@ uint16_t start_calib(bool is_dry)
 		digitalToggle(LED_BLUE);
 	}
 
-	bool need_save = false;
-
-	// Check if needed to save calibration value
+	// Send calibration value
 	if (is_dry)
 	{
-		if (calib_values.zero_val != new_value)
-		{
-			need_save = true;
-		}
-		// Save dry calibration value
-		calib_values.zero_val = new_value;
-		MYLOG("SOIL", "Dry calibration value %d", calib_values.zero_val);
+		MYLOG("SOIL", "Dry calibration value %d", new_value);
+		sensor.set_dry_cal(new_value);
+		calib_values.dry_cal = new_value;
 	}
 	else
 	{
-		if (calib_values.hundred_val != new_value)
-		{
-			need_save = true;
-		}
-		// Save wet calibration value
-		calib_values.hundred_val = new_value;
-		MYLOG("SOIL", "Wet calibration value %d", calib_values.hundred_val);
-	}
-
-	// Values changed, set in class and save them
-	if (need_save)
-	{
-		save_calib();
-		sensor.set_zero_val(calib_values.zero_val);
-		sensor.set_hundred_val(calib_values.hundred_val);
+		MYLOG("SOIL", "Wet calibration value %d", new_value);
+		sensor.set_wet_cal(new_value);
+		calib_values.wet_cal = new_value;
 	}
 
 	if (g_lorawan_settings.send_repeat_time != 0)
 	{
-		// Now we are connected, start the timer that will wakeup the loop frequently
+		// Calibration finished, restart the timer that will wakeup the loop frequently
 		g_task_wakeup_timer.stop();
 		g_task_wakeup_timer.setPeriod(g_lorawan_settings.send_repeat_time);
 		g_task_wakeup_timer.start();
@@ -249,56 +317,34 @@ uint16_t start_calib(bool is_dry)
 	return new_value;
 }
 
-void save_calib(void)
+uint16_t get_calib(bool is_dry)
 {
-	InternalFS.remove(soil_name);
-
-	if (soil_file.open(soil_name, FILE_O_WRITE))
+	uint16_t value = 0;
+	Wire.begin();
+	sensor.sensor_on();
+	if (is_dry)
 	{
-		soil_file.write((uint8_t *)&calib_values, sizeof(calib_values_s));
-		soil_file.flush();
-		soil_file.close();
-
-		MYLOG("SOIL", "Saved Dry Cal: %d Wet Cal: %d", calib_values.zero_val, calib_values.hundred_val);
+		if (!sensor.get_dry_cal(&value))
+		{
+			MYLOG("SOIL", "No Dry calibration");
+		}
+		else
+		{
+			MYLOG("SOIL", "Sensor Dry Cal %d", value);
+		}
 	}
 	else
 	{
-		MYLOG("SOIL", "Failed to save calibration values");
-	}
-}
-
-void read_calib(void)
-{
-	MYLOG("SOIL", "Reading calibration data");
-
-	// Check if file exists
-	if (!soil_file.open(soil_name, FILE_O_READ))
-	{
-		MYLOG("SOIL", "File doesn't exist, create it");
-
-		delay(100);
-		// InternalFS.remove(soil_name);
-
-		if (soil_file.open(soil_name, FILE_O_WRITE))
+		if (!sensor.get_wet_cal(&value))
 		{
-			calib_values_s default_settings;
-			soil_file.write((uint8_t *)&default_settings, sizeof(calib_values_s));
-			soil_file.flush();
-			soil_file.close();
+			MYLOG("SOIL", "No Wet calibration");
 		}
-		soil_file.open(soil_name, FILE_O_READ);
+		else
+		{
+			MYLOG("SOIL", "Sensor Wet Cal %d", value);
+		}
 	}
-	soil_file.read((uint8_t *)&calib_values, sizeof(calib_values_s));
-	soil_file.close();
-
-	MYLOG("SOIL", "Got Dry Cal: %d Wet Cal: %d", calib_values.zero_val, calib_values.hundred_val);
-}
-
-uint16_t get_calib(bool is_dry)
-{
-	if (is_dry)
-	{
-		return calib_values.zero_val;
-	}
-	return calib_values.hundred_val;
+	sensor.sensor_sleep();
+	Wire.end();
+	return value;
 }
