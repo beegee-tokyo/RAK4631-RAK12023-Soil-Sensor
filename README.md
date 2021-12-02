@@ -1,6 +1,6 @@
 # WisBlock Soil Moisture Sensor
-| <img src="./assets/RAK-Whirls.png" alt="Modules" width="150"> | <img src="./assets/rakstar.jpg" alt="RAKstar" width="100"> |    
-| :-: | :-: |     
+| <img src="./assets/RAK-Whirls.png" alt="Modules" width="150"> | <img src="./assets/WisBlock.png" alt="WisBlock" width="150"> | <img src="./assets/rakstar.jpg" alt="RAKstar" width="100"> | <img src="./assets/beegee.png" alt="Bernd" width="100"> |    
+| :-: | :-: | :-: | :-: |      
 
 This example is for a soil moisture sensor based on the [WisBlock RAK4631 Core module](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK4631/Overview/) :arrow_heading_up: and the [RAK12023/RAK12035 soil moisture sensor](https://docs.rakwireless.com/Product-Categories/WisBlock/#wisblock-sensor) :arrow_heading_up:.
 
@@ -38,7 +38,7 @@ The RAK1904 ACC sensor is used as a **`virtual`** switch. BLE is only active aft
 #### Compile the firmware and flash it on a WisBlock with RAK4631 and RAK12023 modules installed.
 
 #### A Setup the LPWAN credentials with one of the options:
-1) Connect over USB to setup the LPWAN credentials. Use the DevEUI printed on the RAK4631, use the AppEUI and AppKey from your LPWAN server. Do _**NOT**_ activate automatic join yet. As soil moisture levels are not changing very fast, it might be sufficient to set the send frequency to every 3 hours. The send frequency is set in seconds, so the value would be 3 * 60 * 60 ==> 10800
+1) Connect over USB to setup the LPWAN credentials. Use the DevEUI printed on the RAK4631, use the AppEUI and AppKey from your LPWAN server. Do _**NOT**_ activate automatic join yet. As soil moisture levels are not changing very fast, it might be sufficient to set the send frequency to every 3 hours. The send frequency is set in seconds, so the value would be 3 * 60 * 60 ==> 10800    
 Example AT commands:
 ```
 AT+NWM=1
