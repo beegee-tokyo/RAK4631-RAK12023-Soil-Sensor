@@ -10,6 +10,7 @@ This example is for a soil moisture sensor based on the [WisBlock RAK4631 Core m
 - [RAK4631](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK4631/Overview/) :arrow_heading_up: WisBlock Core module
 - [RAK5005-O](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK5005-O/Overview/) :arrow_heading_up: WisBlock Base board
 - [RAK12023/RAK12035 soil moisture sensor](https://docs.rakwireless.com/Product-Categories/WisBlock/#wisblock-sensor) :arrow_heading_up:
+- Optional [RAK1904 ACC sensor](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK1904/Overview/) :arrow_heading_up:
 
 ## Power consumption
 The application sleeps around between each measurement and puts the soil moisture sensor into sleep as well. But even this solution switches off the power of the sensor, the sleep current is still ~190uA. Still looking into a better solution.
@@ -22,9 +23,13 @@ The application sleeps around between each measurement and puts the soil moistur
 - [Patch to use RAK4631 with PlatformIO](https://github.com/RAKWireless/WisBlock/blob/master/PlatformIO/RAK4630/README.md) :arrow_heading_up:
 - [WisBlock API](https://github.com/beegee-tokyo/WisBlock-API) :arrow_heading_up:
 - [RAK12035 Soil Moisture library](https://github.com/RAKWireless/RAK12035_SoilMoisture) :arrow_heading_up:
+- [Sparkfun LIS3DH library](https://platformio.org/lib/show/1401/SparkFun%20LIS3DH%20Arduino%20Library)
 
 ## _REMARK_
 The libraries are all listed in the **`platformio.ini`** and are automatically installed when the project is compiled. The RAK12035_SoilMoisture library might not be published yet. It is included in the repo in the _**lib**_ folder.
+
+## _REMARK_    
+The RAK1904 ACC sensor is used as a **`virtual`** switch. BLE is only active after a power up or reset. If the sensor is in the field and parameters needs to be changed, it would be inconvenient to always open the enclosure. If you tap on the enclosure, the module will wake up and activate the BLE for 15 seconds so that a mobile phone can connect. This way it is very simple to change parameters even on deployed sensors somewhere in the field.    
 
 ----
 
@@ -185,5 +190,6 @@ build_flags =
 lib_deps = 
 	beegee-tokyo/WisBlock API
 	beegee-tokyo/RAK12035_SoilMoisture
+	sparkfun/SparkFun LIS3DH Arduino Library
 extra_scripts = pre:rename.py
 ```
