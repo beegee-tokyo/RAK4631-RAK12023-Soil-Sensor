@@ -1,3 +1,10 @@
+# This example has been archived and should no longer be used. Please head over to [WisBlock Examples - RAK12035_RAK4631_LPWAN](https://github.com/RAKWireless/WisBlock/tree/master/examples/RAK4630/solutions/RAK12035_RAK4631_LPWAN) where this code will be maintained in the future.
+
+----
+----
+----
+----
+
 # WisBlock Soil Moisture Sensor
 | <img src="./assets/RAK-Whirls.png" alt="Modules" width="150"> | <img src="./assets/WisBlock.png" alt="WisBlock" width="150"> | <img src="./assets/rakstar.jpg" alt="RAKstar" width="100"> | <img src="./assets/beegee.png" alt="Bernd" width="100"> |    
 | :-: | :-: | :-: | :-: |      
